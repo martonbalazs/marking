@@ -41,7 +41,6 @@ then
 fi
 
 cat "$1"|gawk -F\; -v maxperhw="$2" -v notodrop="$3" -v fcol="$4" -v lcol="$5" ' {
-# Set minima to drop and reset sum
 
 # make an array
 for (i=fcol; i<=lcol; i++)
