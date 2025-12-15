@@ -1,0 +1,77 @@
+#!/bin/bash
+
+# No warranty offered and no responsibility taken for the functioning of this code.
+
+# Usage: hwdropper <file> <max points per HW> <how many to drop> <first column to look at> <last column to look at>
+# File is a csv with ; as separator.
+# Prints total, then percentage, rounded to integers.
+# Needs gawk.
+
+errmsg="Usage: hwdropper <file> <max points per HW> <how many to drop> <first column to look at> <last column to look at>"
+
+if [ "$#" -ne 5 ]
+then
+ echo "$errmsg"
+ exit 1
+fi
+
+if [ ! -f "$1" ]
+then
+ echo "Cannot find the file $1!"
+ exit 2
+fi
+
+checkifno=`echo "$2" | grep -E ^\-?[0-9]*\.?[0-9]+$`
+if [[ "$checkifno" == "" ]]
+then
+ echo "$errmsg"
+ exit 1
+fi
+
+if [[ ! $3 =~ ^-?[0-9]+$ ]] || [[ ! $4 =~ ^-?[0-9]+$ ]] || [[ ! $5 =~ ^-?[0-9]+$ ]]
+then
+ echo "$errmsg"
+ exit 1
+fi
+
+if [[ $2 -lt 0 ]] || [[ $3 -lt 0 ]] || [[ $4 -lt 0 ]] || [[ $5 -lt 0 ]] || [[ $4 -ge $5 ]]
+then
+ echo "$errmsg"
+ exit 1
+fi
+
+cat "$1"|gawk -F\; -v maxperhw="$2" -v notodrop="$3" -v fcol="$4" -v lcol="$5" ' {
+# Set minima to drop and reset sum
+
+# make an array
+for (i=fcol; i<=lcol; i++)
+{
+ if ($i+0==$i)
+  lina[i-fcol+1]=$i;
+ else
+  lina[i-fcol+1]=0;
+}
+n=lcol-fcol+1
+asort(lina,ordered)
+# for (i=1; i<=n; i++) {
+#  print lina[i]
+# }
+# for (i=1; i<=n; i++) {
+#  print ordered[i]
+# }
+dropped=0
+for (j=notodrop+1; j<=lcol-fcol+1; j++)
+{
+ dropped=dropped+ordered[j]
+}
+percent=dropped/(maxperhw*(lcol-fcol+1-notodrop))*100
+# Need to round it to integer
+ival=int(percent)
+frac=percent-ival
+if (frac >= 0.5)
+ rperc=ival+1;
+else
+ rperc=ival;
+
+print $0";"dropped";"percent";"rperc
+} '
